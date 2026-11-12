@@ -20,12 +20,12 @@ pub async fn handle_client(mut socket: WebSocket) {
                 }
             }
 
-            // todo: heartbeat because close 
+            // todo: heartbeat because close
             // does not handle the case of an internet disconnection
             Message::Close(_) => break,
             _ => {}
         }
     }
 
-    tracing::info!("client déconnecté");
+    tracing::info!("client disconnected");
 }

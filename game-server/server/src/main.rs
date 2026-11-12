@@ -1,13 +1,9 @@
-use axum::{
-    Router,
-    extract::ws::WebSocketUpgrade,
-    response::Response,
-    routing::get,
+use axum::{Router, extract::ws::WebSocketUpgrade, response::Response, routing::get};
+
+use server::{
+    client,
+    constants::{CLIENT_MAX_MSG_SIZE, SERVER_LISTEN_ADDRESS},
 };
-
-use tracing;
-
-use server::{client, constants::{CLIENT_MAX_MSG_SIZE, SERVER_LISTEN_ADRESS}};
 
 #[tokio::main]
 async fn main() {
@@ -17,7 +13,7 @@ async fn main() {
         .route("/health", get(|| async { "ok\n" }))
         .route("/ws", get(websocket_upgrade));
 
-    let listener = tokio::net::TcpListener::bind(SERVER_LISTEN_ADRESS)
+    let listener = tokio::net::TcpListener::bind(SERVER_LISTEN_ADDRESS)
         .await
         .unwrap();
     tracing::info!("game-server listens on {}", listener.local_addr().unwrap());
@@ -29,4 +25,3 @@ async fn websocket_upgrade(ws: WebSocketUpgrade) -> Response {
     ws.max_message_size(CLIENT_MAX_MSG_SIZE)
         .on_upgrade(client::handle_client)
 }
-

@@ -15,9 +15,12 @@ async fn main() {
 
     let listener = tokio::net::TcpListener::bind(SERVER_LISTEN_ADDRESS)
         .await
-        .unwrap();
-    tracing::info!("game-server listens on {}", listener.local_addr().unwrap());
-    axum::serve(listener, app).await.unwrap();
+        .expect(format!("failed to bind server to {}", SERVER_LISTEN_ADDRESS).as_str());
+    tracing::info!(
+        "game-server listens on {}",
+        listener.local_addr().expect("failed to get local address")
+    );
+    axum::serve(listener, app).await.expect("server closed");
 }
 
 /// received an http upgrade to websocket

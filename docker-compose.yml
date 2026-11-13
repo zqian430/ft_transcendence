@@ -1,0 +1,106 @@
+services:
+  # ----------------------------------------------------------------------------
+  # 1. Reverse Proxy & SSL Termination
+  # ----------------------------------------------------------------------------
+  nginx:
+    build:
+      context: ./nginx
+    container_name: nginx-proxy
+    ports:
+      - "${NGINX_HTTPS_PORT}:${NGINX_HTTPS_PORT}"
+    env_file:
+      - .env
+    volumes:
+      - ssl_certs:/etc/nginx/ssl
+    depends_on:
+      admin-server:
+        condition: service_healthy
+      game-server:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - transcendence-net
+
+  # ----------------------------------------------------------------------------
+  # 2. Game Server (Rust / Tokio) - Depends on the Admin Server (internal API)
+  # ----------------------------------------------------------------------------
+  game-server:
+    build:
+      context: ./game-server
+    container_name: game-server
+    env_file:
+      - .env
+    depends_on:
+      admin-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${GAME_SERVER_PORT}/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - transcendence-net
+
+  # ----------------------------------------------------------------------------
+  # 3. Administration Server (Rust / Axum) - Depends on the database
+  # ----------------------------------------------------------------------------
+  admin-server:
+    build:
+      context: ./admin-server
+    container_name: admin-server
+    env_file:
+      - .env
+    secrets:
+      - db_password
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${ADMIN_SERVER_PORT}/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - transcendence-net
+
+  # ----------------------------------------------------------------------------
+  # 4. Database (PostgreSQL)
+  # ----------------------------------------------------------------------------
+  database:
+    image: postgres:15-alpine
+    container_name: postgres-db
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db_password
+    secrets:
+      - db_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - transcendence-net
+
+# ------------------------------------------------------------------------------
+# SECRETS, VOLUMES & NETWORKS
+# ------------------------------------------------------------------------------
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+
+volumes:
+  postgres_data:
+  ssl_certs:
+
+networks:
+  transcendence-net:
+    driver: bridge

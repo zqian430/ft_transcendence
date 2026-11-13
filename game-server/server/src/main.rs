@@ -1,6 +1,6 @@
 use axum::{Router, extract::ws::WebSocketUpgrade, response::Response, routing::get};
 
-use server::{
+use game_server::{
     client,
     constants::{CLIENT_MAX_MSG_SIZE, SERVER_LISTEN_HOST, SERVER_PORT_ENV},
 };

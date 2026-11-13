@@ -8,7 +8,7 @@ RUN apk add --no-cache musl-dev pkgconfig openssl-dev
 
 WORKDIR /usr/src/app
 
-ARG BIN_NAME="server"
+ARG BIN_NAME="game-server"
 
 COPY . .
 

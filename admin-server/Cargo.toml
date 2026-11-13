@@ -1,8 +1,8 @@
 [package]
 name = "admin-server"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
-axum = "0.7"
-tokio = { version = "1", features = ["full"] }
+axum = "0.8.9"
+tokio = { version = "1.54.1", features = ["full"] }

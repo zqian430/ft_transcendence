@@ -2,20 +2,26 @@ use axum::{Router, extract::ws::WebSocketUpgrade, response::Response, routing::g
 
 use server::{
     client,
-    constants::{CLIENT_MAX_MSG_SIZE, SERVER_LISTEN_ADDRESS},
+    constants::{CLIENT_MAX_MSG_SIZE, SERVER_LISTEN_HOST, SERVER_PORT_ENV},
 };
 
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
 
+    let port: u16 = std::env::var(SERVER_PORT_ENV)
+        .unwrap_or_else(|_| panic!("environment variable {SERVER_PORT_ENV} is not set"))
+        .parse()
+        .unwrap_or_else(|_| panic!("{SERVER_PORT_ENV} must be a valid port number (0-65535)"));
+    let address = format!("{SERVER_LISTEN_HOST}:{port}");
+
     let app = Router::new()
         .route("/health", get(|| async { "ok\n" }))
         .route("/ws", get(websocket_upgrade));
 
-    let listener = tokio::net::TcpListener::bind(SERVER_LISTEN_ADDRESS)
+    let listener = tokio::net::TcpListener::bind(&address)
         .await
-        .expect(format!("failed to bind server to {}", SERVER_LISTEN_ADDRESS).as_str());
+        .unwrap_or_else(|_| panic!("failed to bind server to {address}"));
     tracing::info!(
         "game-server listens on {}",
         listener.local_addr().expect("failed to get local address")

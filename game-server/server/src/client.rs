@@ -1,5 +1,5 @@
 use axum::extract::ws::{Message, WebSocket};
-use engine::protocol::ClientMsg;
+use game_protocol::ClientMsg;
 use tracing::{info, warn};
 
 /// a websocket connection. all client logic is here

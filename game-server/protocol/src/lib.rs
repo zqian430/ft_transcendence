@@ -5,10 +5,12 @@ use serde::{Deserialize, Serialize};
 #[serde(tag = "type", content = "payload")]
 pub enum ClientMsg {
     Chat { text: String },
+    ChatPrivate {from: String, to: String, text: String},
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type", content = "payload")]
 pub enum ServerMsg {
     Chat { from: String, text: String },
+    ChatPrivate {from: String, text: String},
 }

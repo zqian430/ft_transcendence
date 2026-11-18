@@ -7,10 +7,8 @@ use axum::{
 };
 use game_server::{
     client,
-    constants::{
-        CLIENT_MAX_MSG_SIZE, COORDINATOR_CHANNEL_SIZE, SERVER_LISTEN_HOST, SERVER_PORT_ENV,
-    },
-    coordinator::{self, InnerCommand},
+    constants::{CLIENT_MAX_MSG_SIZE, LOBBY_CHANNEL_SIZE, SERVER_LISTEN_HOST, SERVER_PORT_ENV},
+    lobby::{self, InnerCommand},
 };
 use serde::Deserialize;
 use tokio::sync::mpsc;
@@ -25,15 +23,14 @@ async fn main() {
         .unwrap_or_else(|_| panic!("{SERVER_PORT_ENV} must be a valid port number (0-65535)"));
     let address = format!("{SERVER_LISTEN_HOST}:{port}");
 
-    let (coordinator_msg_sender, coordinator_msg_receiver) =
-        mpsc::channel(COORDINATOR_CHANNEL_SIZE);
-    // start the coordinator
-    tokio::spawn(coordinator::run(coordinator_msg_receiver));
+    let (lobby_msg_sender, lobby_msg_receiver) = mpsc::channel(LOBBY_CHANNEL_SIZE);
+    // start the lobby
+    tokio::spawn(lobby::run(lobby_msg_receiver));
 
     let app = Router::new()
         .route("/health", get(|| async { "ok\n" }))
         .route("/ws", get(websocket_upgrade))
-        .with_state(coordinator_msg_sender);
+        .with_state(lobby_msg_sender);
 
     let listener = tokio::net::TcpListener::bind(&address)
         .await
@@ -56,12 +53,12 @@ struct ConnectParams {
 async fn websocket_upgrade(
     ws: WebSocketUpgrade,
     Query(params): Query<ConnectParams>, // ?arg= ... in the browser
-    State(coordinator): State<mpsc::Sender<InnerCommand>>, // given by the server
+    State(lobby): State<mpsc::Sender<InnerCommand>>, // given by the server
 ) -> Response {
     let user = params.user;
     if user.is_empty() || user.len() > 20 {
         return StatusCode::BAD_REQUEST.into_response();
     }
     ws.max_message_size(CLIENT_MAX_MSG_SIZE)
-        .on_upgrade(move |socket| client::handle_client(socket, user, coordinator))
+        .on_upgrade(move |socket| client::handle_client(socket, user, lobby))
 }

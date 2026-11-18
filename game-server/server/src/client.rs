@@ -4,28 +4,25 @@ use tokio::sync::{mpsc, oneshot};
 use tracing::warn;
 
 use crate::{
-    constants::{CLIENT_CHANNEL_SIZE, ERR_ALREADY_CONNECTED}, coordinator::{InnerCommand, UserId},
+    constants::{CLIENT_CHANNEL_SIZE, ERR_ALREADY_CONNECTED},
+    lobby::{InnerCommand, UserId},
 };
 
 /// all client logic
-pub async fn handle_client(
-    mut socket: WebSocket,
-    user: UserId,
-    coordinator: mpsc::Sender<InnerCommand>,
-) {
+pub async fn handle_client(mut socket: WebSocket, user: UserId, lobby: mpsc::Sender<InnerCommand>) {
     let (client_accepted_sender, client_accepted_receiver) = oneshot::channel();
     // client receives msgs here
     let (msg_sender, mut msg_receiver) = mpsc::channel::<ServerMsg>(CLIENT_CHANNEL_SIZE);
-    if coordinator
+    if lobby
         .send(InnerCommand::Connect {
             user: user.clone(),
             msg_sender,
-            client_accepted_sender
+            client_accepted_sender,
         })
         .await
         .is_err()
     {
-        return; // coordinator is dead
+        return; // lobby is dead
     }
 
     if client_accepted_receiver.await != Ok(true) {
@@ -35,7 +32,7 @@ pub async fn handle_client(
                 reason: "user already connected".into(),
             })))
             .await;
-        return; // quit if the coordinator refuses 
+        return; // quit if the lobby refuses
     }
 
     loop {
@@ -45,11 +42,8 @@ pub async fn handle_client(
                 let Some(Ok(client_msg)) = incoming_msg else {break};
                 match client_msg {
                     Message::Text(text) => match serde_json::from_str::<ClientMsg>(&text) {
-                        Ok(ClientMsg::ChatGlobal { text }) => {
-                            let _ = coordinator.send(InnerCommand::ChatGlobal { from: user.clone(), text }).await;
-                        }
-                        Ok(ClientMsg::Chat { to, text }) => {
-                            let _ = coordinator.send(InnerCommand::Chat { from: user.clone(), to, text }).await;
+                        Ok(msg) => {
+                            let _ = lobby.send(InnerCommand::FromClient { from: user.clone(), msg }).await;
                         }
                         Err(e) => {
                             warn!(%user, %e, "invalid command");
@@ -75,7 +69,7 @@ pub async fn handle_client(
             }
         }
     }
-    let _ = coordinator.send(InnerCommand::Disconnect { user }).await;
+    let _ = lobby.send(InnerCommand::Disconnect { user }).await;
 }
 
 /// serializes a message and sends it to the client, returns false if the socket is closed

@@ -1,17 +1,32 @@
-// all message types sent by the server and the client are defined here
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type", content = "payload", deny_unknown_fields)]
 pub enum ClientMsg {
-    ChatGlobal { text: String },
-    Chat { to: String, text: String },
+    Chat(ChatMsg),
+    // Lobby(LobbyMsg),
+    // Game(GameMsg),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type", content = "payload", deny_unknown_fields)]
 pub enum ServerMsg {
-    ChatGlobal { from: String, text: String },
-    Chat { from: String, text: String },
+    Chat(ChatEvent),
     Error { message: String },
+}
+
+/// chat msg sent by clients
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(tag = "type", content = "payload", deny_unknown_fields)]
+pub enum ChatMsg {
+    Global { text: String },
+    Private { to: String, text: String },
+}
+
+/// chat msg sent to clients
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(tag = "type", content = "payload", deny_unknown_fields)]
+pub enum ChatEvent {
+    Global { from: String, text: String },
+    Private { from: String, text: String },
 }

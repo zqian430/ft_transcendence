@@ -4,7 +4,8 @@ use tokio::sync::{mpsc, oneshot};
 use tracing::warn;
 
 use crate::{
-    constants::{CLIENT_CHANNEL_SIZE, ERR_ALREADY_CONNECTED}, coordinator::{InnerCommand, UserId},
+    constants::{CLIENT_CHANNEL_SIZE, ERR_ALREADY_CONNECTED},
+    coordinator::{InnerCommand, UserId},
 };
 
 /// all client logic
@@ -20,7 +21,7 @@ pub async fn handle_client(
         .send(InnerCommand::Connect {
             user: user.clone(),
             msg_sender,
-            client_accepted_sender
+            client_accepted_sender,
         })
         .await
         .is_err()
@@ -35,7 +36,7 @@ pub async fn handle_client(
                 reason: "user already connected".into(),
             })))
             .await;
-        return; // quit if the coordinator refuses 
+        return; // quit if the coordinator refuses
     }
 
     loop {
@@ -45,11 +46,8 @@ pub async fn handle_client(
                 let Some(Ok(client_msg)) = incoming_msg else {break};
                 match client_msg {
                     Message::Text(text) => match serde_json::from_str::<ClientMsg>(&text) {
-                        Ok(ClientMsg::ChatGlobal { text }) => {
-                            let _ = coordinator.send(InnerCommand::ChatGlobal { from: user.clone(), text }).await;
-                        }
-                        Ok(ClientMsg::Chat { to, text }) => {
-                            let _ = coordinator.send(InnerCommand::Chat { from: user.clone(), to, text }).await;
+                        Ok(msg) => {
+                            let _ = coordinator.send(InnerCommand::FromClient { from: user.clone(), msg }).await;
                         }
                         Err(e) => {
                             warn!(%user, %e, "invalid command");

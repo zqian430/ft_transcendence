@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[serde(tag = "type", content = "payload", deny_unknown_fields)]
 pub enum ClientMsg {
     Chat(ChatMsg),
-    // Lobby(LobbyMsg),
+    // Matchmaking(MatchmakingMsg),
     // Game(GameMsg),
 }
 

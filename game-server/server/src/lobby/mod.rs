@@ -1,3 +1,5 @@
+//! all connected players are stored here, even the ones in a game
+
 mod chat;
 
 use std::collections::{HashMap, hash_map::Entry};
@@ -7,10 +9,9 @@ use tokio::sync::{mpsc, oneshot};
 use tracing::info;
 
 pub type UserId = String;
-
 pub type Players = HashMap<UserId, mpsc::Sender<ServerMsg>>;
 
-/// inner protocol
+/// all commands used in the server, not just the ones in the protocol
 pub enum InnerCommand {
     Connect {
         user: UserId,
@@ -21,7 +22,7 @@ pub enum InnerCommand {
         user: UserId,
     },
 
-    /// a message sent by a client, forwarded as is
+    /// a message sent by a client (protocol commands)
     FromClient {
         from: UserId,
         msg: ClientMsg,
@@ -55,10 +56,9 @@ pub async fn run(mut msg_receiver: mpsc::Receiver<InnerCommand>) {
                 players.remove(&user);
                 info!("player {user} disconnected");
             }
-            // commands sent by clients
             InnerCommand::FromClient { from, msg } => match msg {
                 ClientMsg::Chat(msg) => chat::handle(&players, from, msg),
-                // ClientMsg::Lobby(msg) => lobby::handle(&mut lobby, &players, from, msg),
+                // ClientMsg::Matchmaking(msg) => matchmaking::handle(&mut queue, &players, from, msg),
             },
         }
     }

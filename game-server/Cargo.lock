@@ -200,6 +200,7 @@ dependencies = [
  "axum",
  "game-engine",
  "game-protocol",
+ "serde",
  "serde_json",
  "tokio",
  "tracing",

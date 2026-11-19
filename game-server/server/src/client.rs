@@ -4,6 +4,7 @@ use tokio::sync::{mpsc, oneshot};
 use tracing::warn;
 
 use crate::{
+    client_msg_sender::ClientMsgSender,
     constants::{CLIENT_CHANNEL_SIZE, ERR_ALREADY_CONNECTED},
     lobby::{InnerCommand, UserId},
 };
@@ -16,7 +17,7 @@ pub async fn handle_client(mut socket: WebSocket, user: UserId, lobby: mpsc::Sen
     if lobby
         .send(InnerCommand::Connect {
             user: user.clone(),
-            msg_sender,
+            msg_sender: ClientMsgSender::new(msg_sender),
             client_accepted_sender,
         })
         .await

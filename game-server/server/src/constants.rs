@@ -4,3 +4,4 @@ pub const CLIENT_MAX_MSG_SIZE: usize = 1024 * 16;
 pub const CLIENT_CHANNEL_SIZE: usize = 128;
 pub const LOBBY_CHANNEL_SIZE: usize = 1024;
 pub const ERR_ALREADY_CONNECTED: u16 = 4001;
+pub const MAX_PLAYERS_PER_TEAM: u8 = 2;

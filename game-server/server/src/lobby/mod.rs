@@ -65,7 +65,7 @@ pub async fn run(mut msg_receiver: mpsc::Receiver<InnerCommand>) {
                 ClientMsg::Chat(msg) => chat::handle(&players, from, msg),
                 ClientMsg::Matchmaking(msg) => {
                     if let Some(_match_info) = matchmaking.handle(&players, from, msg) {
-                        //game::start(_match_info)
+                        // then start match
                     }
                 }
             },

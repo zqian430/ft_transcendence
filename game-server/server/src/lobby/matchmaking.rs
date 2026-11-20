@@ -33,14 +33,14 @@ impl Matchmaking {
 
         match msg {
             MatchmakingMsg::JoinQueue { team_mode } => {
-                if self.is_queued(&from) {
+                if self.is_in_queue(&from) {
                     msg_sender.send_error("already in queue");
                     return None;
                 }
                 info!("player {from} joined the {team_mode:?} queue");
                 self.queue_mut(team_mode).push_back(from);
                 msg_sender.send(ServerMsg::Matchmaking(MatchmakingEvent::Joined {}));
-                self.try_match(players, team_mode)
+                self.get_match(players, team_mode)
             }
             MatchmakingMsg::LeaveQueue {} => {
                 if self.remove(&from) {
@@ -62,7 +62,7 @@ impl Matchmaking {
         before != self.solo_queue.len() + self.duo_queue.len()
     }
 
-    fn is_queued(&self, user: &UserId) -> bool {
+    fn is_in_queue(&self, user: &UserId) -> bool {
         self.solo_queue.contains(user) || self.duo_queue.contains(user)
     }
 
@@ -74,22 +74,19 @@ impl Matchmaking {
     }
 
     /// takes the first players of the queue if there are enough to fill two teams
-    fn try_match(&mut self, players: &Players, team_mode: TeamMode) -> Option<MatchInfo> {
-        let team_size = players_per_team(team_mode);
+    fn get_match(&mut self, players: &Players, team_mode: TeamMode) -> Option<MatchInfo> {
+        let team_size = team_mode.team_size();
         let queue = self.queue_mut(team_mode);
-
-        // a client can be dead while its Disconnect is still waiting in the lobby channel
-        queue.retain(|u| players.get(u).is_some_and(|sender| !sender.is_closed()));
 
         if queue.len() < team_size * 2 {
             return None;
         }
         let team_a: Vec<UserId> = queue.drain(..team_size).collect();
         let team_b: Vec<UserId> = queue.drain(..team_size).collect();
-        info!("{team_mode:?} match found: {team_a:?} vs {team_b:?}");
+        info!("match found between teams: {team_a:?} vs {team_b:?}");
 
-        notify_team(players, &team_a, &team_b);
-        notify_team(players, &team_b, &team_a);
+        notify_team_match_found(players, &team_a, &team_b);
+        notify_team_match_found(players, &team_b, &team_a);
         Some(MatchInfo {
             team_mode,
             teams: [team_a, team_b],
@@ -97,15 +94,8 @@ impl Matchmaking {
     }
 }
 
-fn players_per_team(team_mode: TeamMode) -> usize {
-    match team_mode {
-        TeamMode::Solo => 1,
-        TeamMode::Duo => 2,
-    }
-}
-
-/// sends MatchFound to every player of `team`
-fn notify_team(players: &Players, team: &[UserId], opponents: &[UserId]) {
+/// sends MatchFound to every player of the team
+fn notify_team_match_found(players: &Players, team: &[UserId], opponents: &[UserId]) {
     for user in team {
         let Some(msg_sender) = players.get(user) else {
             continue;

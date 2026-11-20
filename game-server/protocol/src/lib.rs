@@ -37,6 +37,16 @@ pub enum TeamMode {
     Duo,
 }
 
+impl TeamMode {
+    /// number of players in each team
+    pub fn team_size(self) -> usize {
+        match self {
+            TeamMode::Solo => 1,
+            TeamMode::Duo => 2,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type", content = "payload", deny_unknown_fields)]
 pub enum MatchmakingMsg {

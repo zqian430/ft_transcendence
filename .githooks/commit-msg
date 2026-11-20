@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -e
+
+MSG=$(head -n 1 "$1")
+REGEX="^(feat|fix|chore|docs|style|refactor|perf|test|build|ci|revert)(\([a-zA-Z0-9._/-]+\))?(!)?: .{1,}$"
+
+if ! [[ "$MSG" =~ $REGEX ]]; then
+	echo "❌ Commit aborted: '$MSG' does not follow Conventional Commits."
+	echo "   Allowed types: feat, fix, chore, docs, style, refactor, perf, test, build, ci, revert"
+	echo "   Format: <type>(<optional scope>): <description>"
+	echo "   Examples:"
+	echo "     feat(api): add user authentication"
+	echo "     fix(ws): handle reconnection timeout"
+	echo "     chore: update docker configuration"
+	exit 1
+fi

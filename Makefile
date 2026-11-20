@@ -1,11 +1,17 @@
 # Project name (optional, useful for prefixing container names)
 COMPOSE = docker compose
+HOOKS = .githooks
 
-.PHONY: all up build down restart logs clean fclean
+.PHONY: all hooks build up down restart logs clean fclean
 
 # Default behavior when running just "make"
-all: build
+all: hooks build
 
+# Set up local Git hooks and auto-setup remote tracking branches
+hooks:
+	@git config core.hooksPath $(HOOKS) 2>/dev/null || true
+	@git config push.autoSetupRemote true 2>/dev/null || true
+	@chmod +x $(HOOKS)/* 2>/dev/null || true
 
 # Force a rebuild and restart the containers
 build:

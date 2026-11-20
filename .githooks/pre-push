@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -e
+
+BRANCH=$(git branch --show-current)
+[ -z "$BRANCH" ] || [ "$BRANCH" = "dev" ] || [ "$BRANCH" = "main" ] && exit 0
+
+git fetch origin dev --quiet
+BEHIND=$(git rev-list --count HEAD..origin/dev)
+
+if [ "$BEHIND" -gt 0 ]; then
+	echo "Branch is $BEHIND commit(s) behind origin/dev. Rebasing..."
+	git rebase origin/dev
+	git push -u --no-verify origin "$BRANCH"
+	echo "Rebased and pushed $BRANCH successfully."
+	# Abort the outer push so Git does not push the stale pre-rebase commit
+	exit 1
+fi
+
+echo "Branch is up to date with origin/dev."
+exit 0

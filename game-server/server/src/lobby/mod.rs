@@ -9,7 +9,7 @@ use game_protocol::ClientMsg;
 use tokio::sync::{mpsc, oneshot};
 use tracing::info;
 
-use crate::{client_msg_sender::ClientMsgSender, lobby::matchmaking::Matchmaking};
+use crate::{client::ClientMsgSender, lobby::matchmaking::Matchmaking};
 
 pub type UserId = String;
 type Players = HashMap<UserId, ClientMsgSender>;
@@ -44,8 +44,8 @@ pub async fn run(mut msg_receiver: mpsc::Receiver<InnerCommand>) {
                 client_accepted_sender,
             } => {
                 let inserted = match players.entry(user.clone()) {
-                    Entry::Vacant(e) => {
-                        e.insert(msg_sender);
+                    Entry::Vacant(entry) => {
+                        entry.insert(msg_sender);
                         info!("player {user} connected");
                         true
                     }

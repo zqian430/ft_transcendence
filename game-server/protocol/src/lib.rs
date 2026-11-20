@@ -1,32 +1,66 @@
 use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
+/// chat msg sent by clients
+#[derive(Deserialize, Debug)]
 #[serde(tag = "type", content = "payload", deny_unknown_fields)]
 pub enum ClientMsg {
     Chat(ChatMsg),
-    // Matchmaking(MatchmakingMsg),
+    Matchmaking(MatchmakingMsg),
     // Game(GameMsg),
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(tag = "type", content = "payload", deny_unknown_fields)]
+/// chat msg sent to clients
+#[derive(Serialize, Debug)]
+#[serde(tag = "type", content = "payload")]
 pub enum ServerMsg {
     Chat(ChatEvent),
+    Matchmaking(MatchmakingEvent),
     Error { message: String },
 }
 
-/// chat msg sent by clients
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug)]
 #[serde(tag = "type", content = "payload", deny_unknown_fields)]
 pub enum ChatMsg {
     Global { text: String },
     Private { to: String, text: String },
 }
 
-/// chat msg sent to clients
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(tag = "type", content = "payload", deny_unknown_fields)]
+#[derive(Serialize, Debug)]
+#[serde(tag = "type", content = "payload")]
 pub enum ChatEvent {
     Global { from: String, text: String },
     Private { from: String, text: String },
+}
+
+#[derive(Deserialize, Debug, Clone, Copy)]
+pub enum TeamMode {
+    Solo,
+    Duo,
+}
+
+impl TeamMode {
+    /// number of players in each team
+    pub fn team_size(self) -> usize {
+        match self {
+            TeamMode::Solo => 1,
+            TeamMode::Duo => 2,
+        }
+    }
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(tag = "type", content = "payload", deny_unknown_fields)]
+pub enum MatchmakingMsg {
+    JoinQueue { team_mode: TeamMode },
+    LeaveQueue {},
+}
+
+#[derive(Serialize, Debug)]
+#[serde(tag = "type", content = "payload")]
+pub enum MatchmakingEvent {
+    Joined {},
+    Left {},
+    MatchFound {
+        teammates: Vec<String>,
+        opponents: Vec<String>,
+    },
 }

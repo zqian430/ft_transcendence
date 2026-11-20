@@ -4,7 +4,7 @@
 # ==============================================================================
 # Works for any Cargo layout (single crate or workspace, any depth of members):
 # the whole context is copied and built, then the binary BIN_NAME is shipped.
-FROM rust:1-alpine AS builder
+FROM rust:1-alpine@sha256:8d0e82abfdf9a38071e07cabc5afba4ddbe077631a80e4e742a760c38beadc33 AS builder
 
 # musl-dev and openssl-dev are required to compile SQL/HTTPS clients in Rust
 RUN apk add --no-cache musl-dev pkgconfig openssl-dev
@@ -35,7 +35,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 # ==============================================================================
 # STEP 2: Runtime image
 # ==============================================================================
-FROM alpine:3.20
+FROM alpine:3.20@sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc
 
 # curl for the healthcheck, ca-certificates for calling external APIs (42 OAuth, external LLM)
 RUN apk add --no-cache curl ca-certificates libgcc

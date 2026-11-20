@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-/// chat msg sent by clients
+/// msg sent by clients
 #[derive(Deserialize, Debug)]
 #[serde(tag = "type", content = "payload", deny_unknown_fields)]
 pub enum ClientMsg {
@@ -8,7 +8,7 @@ pub enum ClientMsg {
     // Game(GameMsg),
 }
 
-/// chat msg sent to clients
+/// msg sent to clients
 #[derive(Serialize, Debug)]
 #[serde(tag = "type", content = "payload")]
 pub enum ServerMsg {

@@ -83,6 +83,12 @@ pub async fn handle_client(mut socket: WebSocket, user: UserId, lobby: mpsc::Sen
                 }
             }
 
+            // checks if the client is not slow to read messages
+            _ = msg_sender.overflowed() => {
+                warn!(%user, "exiting because client is too slow");
+                break;
+            }
+
             // a part of the server wants to send a message to a client
             outgoing = msg_receiver.recv() => {
                 let Some(msg) = outgoing else { break };

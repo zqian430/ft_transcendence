@@ -1,5 +1,6 @@
 mod heartbeat;
 mod msg_sender;
+mod tokens;
 
 pub use msg_sender::ClientMsgSender;
 
@@ -15,7 +16,7 @@ use tokio::{
 use tracing::warn;
 
 use crate::{
-    client::heartbeat::Heartbeat,
+    client::{heartbeat::Heartbeat, tokens::Tokens},
     constants::{CLIENT_CHANNEL_SIZE, CLIENT_SEND_TIMEOUT, ERR_ALREADY_CONNECTED},
     lobby::{InnerCommand, UserId},
 };
@@ -47,6 +48,7 @@ pub async fn handle_client(mut socket: WebSocket, user: UserId, lobby: mpsc::Sen
     }
 
     let mut heartbeat = Heartbeat::new();
+    let mut tokens = Tokens::new();
 
     loop {
         tokio::select! {
@@ -57,6 +59,10 @@ pub async fn handle_client(mut socket: WebSocket, user: UserId, lobby: mpsc::Sen
                 match client_msg {
                     Message::Text(text) => match serde_json::from_str::<ClientMsg>(&text) {
                         Ok(msg) => {
+                            if !tokens.try_consume_token(&msg) {
+                                msg_sender.send_error("too many messages, slow down");
+                                continue;
+                            }
                             if lobby.send(InnerCommand::FromClient { from: user.clone(), msg }).await.is_err() {
                                 break; // lobby is dead
                             }

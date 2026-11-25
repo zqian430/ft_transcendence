@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use game_protocol::{MatchmakingEvent, MatchmakingMsg, ServerMsg, TeamMode};
 use tracing::info;
 
-use crate::lobby::{Players, UserId};
+use crate::lobby::{InGame, Players, UserId};
 
 /// returned to the lobby when enough players were found to start a game
 pub struct MatchInfo {
@@ -26,6 +26,7 @@ impl Matchmaking {
     pub fn handle(
         &mut self,
         players: &Players,
+        in_game: &InGame,
         from: UserId,
         msg: MatchmakingMsg,
     ) -> Option<MatchInfo> {
@@ -33,6 +34,10 @@ impl Matchmaking {
 
         match msg {
             MatchmakingMsg::JoinQueue { team_mode } => {
+                if let Some(game_id) = in_game.get(&from) {
+                    msg_sender.send_error(format!("already in game {game_id}"));
+                    return None;
+                }
                 if self.is_in_queue(&from) {
                     msg_sender.send_error("already in queue");
                     return None;

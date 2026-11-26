@@ -14,4 +14,6 @@ pub const CLIENT_SEND_TIMEOUT: Duration = Duration::from_secs(5);
 pub const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(3); // check every  HEARTBEAT_INTERVAL secs
 pub const HEARTBEAT_TIMEOUT: Duration = Duration::from_secs(10);
 pub const LOBBY_CHANNEL_SIZE: usize = 1024;
+pub const GAME_TICK: Duration = Duration::from_millis(16); // ~60 ticks per sec
+pub const GAME_TEMP_DURATION: Duration = Duration::from_secs(20); //temporary
 pub const ERR_ALREADY_CONNECTED: u16 = 4001;

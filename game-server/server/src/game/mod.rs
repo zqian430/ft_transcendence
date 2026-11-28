@@ -59,6 +59,7 @@ pub async fn run(id: GameId, team_mode: TeamMode, teams: [Vec<UserId>; 2]) -> Ga
             _ = tick.tick() => {
 
             }
+
             _ = &mut game_over => break,
         }
     }

@@ -8,7 +8,7 @@ use axum::{
 use game_server::{
     client,
     constants::{CLIENT_MAX_MSG_SIZE, LOBBY_CHANNEL_SIZE, SERVER_LISTEN_HOST, SERVER_PORT_ENV},
-    lobby::{self, InnerCommand},
+    lobby::{InnerCommand, Lobby},
 };
 use serde::Deserialize;
 use tokio::sync::mpsc;
@@ -25,7 +25,7 @@ async fn main() {
 
     let (lobby_msg_sender, lobby_msg_receiver) = mpsc::channel(LOBBY_CHANNEL_SIZE);
     // start the lobby
-    tokio::spawn(lobby::run(lobby_msg_receiver));
+    tokio::spawn(Lobby::new(lobby_msg_receiver).run());
 
     let app = Router::new()
         .route("/health", get(|| async { "ok\n" }))
